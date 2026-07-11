@@ -25,17 +25,16 @@
     <h2>Independent Alternative Football Ranking System</h2>
     
     <div class="scale-info">
-        <strong>System Bounds Check:</strong> Scores are anchored between <strong>0.5 (Best)</strong> and <strong>60.0 (Worst)</strong>. 
-        <br><em>Note: If you run data for the very first time, the system automatically uses the precise <strong>99 / 210</strong> fraction to turn raw actual FIFA ranks into normalized baseline scores. From month 2 onward, it will read your custom scores directly.</em>
+        <strong>Engine Status:</strong> Running direct custom scores. Math boundaries automatically handle ranges natively down to 0.5 (Best possible) and up to 60.0 (Worst possible).
     </div>
 
     <p><strong>Choose your data mode:</strong></p>
     <div style="margin-bottom: 15px;">
         <input type="radio" id="modeCustom" name="dataMode" value="custom" checked>
-        <label for="modeCustom"><strong>Month 2+ Mode</strong> (Uses previous custom scores for both your team and opponents)</label>
+        <label for="modeCustom"><strong>Month 2+ Mode</strong> (Uses your custom system scores directly for Y and R)</label>
         <br>
         <input type="radio" id="modeFirst" name="dataMode" value="first">
-        <label for="modeFirst"><strong>Month 1 Setup Mode</strong> (Converts raw actual FIFA ranks automatically for you)</label>
+        <label for="modeFirst"><strong>Month 1 Setup Mode</strong> (Converts raw actual FIFA ranks 1-211 to your scale using 99 / 210)</label>
     </div>
 
     <p><strong>Paste Bulk Team Data (One team per line):</strong></p>
@@ -80,31 +79,34 @@ France 8.3 | D 8.3 5, W 30.5 3</textarea>
                 const segments = line.split('|');
                 if (segments.length < 2) return;
 
-                const baselineTokens = segments[0].trim().split(/\s+/);
+                const baselineTokens = segments.trim().split(/\s+/);
                 const prevInputVal = parseFloat(baselineTokens[baselineTokens.length - 1]);
                 const teamName = baselineTokens.slice(0, baselineTokens.length - 1).join(" ");
 
+                // Month 1 applies the fraction; Month 2 uses your score directly as Y
                 const Y = isFirstIteration ? (1 + ((99 / 210) * (prevInputVal - 1))) : prevInputVal;
 
-                const matchStrings = segments[1].trim().split(',');
+                const matchStrings = segments.trim().split(',');
                 let matches = [];
 
                 matchStrings.forEach(mStr => {
                     const mTokens = mStr.trim().split(/\s+/);
                     if (mTokens.length === 3) {
-                        const opponentInputVal = parseFloat(mTokens[1]);
+                        const opponentInputVal = parseFloat(mTokens);
+                        
+                        // Month 1 applies the fraction; Month 2 uses opponent score directly as R
                         const R = isFirstIteration ? (1 + ((99 / 210) * (opponentInputVal - 1))) : opponentInputVal;
 
                         matches.push({
-                            result: mTokens[0].toUpperCase(),
+                            result: mTokens.toUpperCase(),
                             R: R,
-                            I: parseInt(mTokens[2])
+                            I: parseInt(mTokens)
                         });
                     }
                 });
 
                 const gamesPlayed = Math.min(matches.length, 5);
-                let WMOR = 0, calculatedScore = 0, updatedScore = Y;
+                let WMOR = 0, calculatedScore = 0, updatedScore = prevInputVal;
 
                 if (gamesPlayed > 0) {
                     let totalWeightedMatchScore = 0;
@@ -127,11 +129,13 @@ France 8.3 | D 8.3 5, W 30.5 3</textarea>
 
                     WMOR = totalWeightedOpponentRank / totalImportance;
                     const meanMatchScore = totalWeightedMatchScore / totalImportance;
+                    
+                    // Runs the core score directly on your custom scale values
                     calculatedScore = meanMatchScore - (0.4 * WMOR);
 
                     const previousImpact = 1 - (gamesPlayed / 5);
                     const newImpact = gamesPlayed / 5;
-                    updatedScore = (Y * previousImpact) + (calculatedScore * newImpact);
+                    updatedScore = (prevInputVal * previousImpact) + (calculatedScore * newImpact);
                 }
 
                 leaderboardData.push({
