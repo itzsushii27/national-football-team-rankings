@@ -11,37 +11,75 @@
 
 <p>
 Lower score = better ranking.
-This system uses recent performance, opponent strength,
-match importance, and team history.
+The system accounts for opponent strength, match result,
+match importance, and confidence in new results.
 </p>
 
-<h2>Formula</h2>
+<h2>Full Formula</h2>
 
 <p>
 Updated Score = Previous Score × (1 - G/5)
-+ Calculated Score × (G/5)
++ [Σ I(s - 0.4R) / Σ I] × (G/5)
 </p>
 
-<h2>Ranking Calculator</h2>
+<h2>Match Calculator</h2>
+
+<label>Your normalized rank (Y):</label>
+<input id="teamRank" type="number" min="1" max="100">
+
+<br>
+
+<label>Opponent normalized rank (R):</label>
+<input id="oppRank" type="number" min="1" max="100">
+
+<br>
+
+<label>Result:</label>
+
+<select id="resultType">
+<option value="win">Win</option>
+<option value="draw">Draw</option>
+<option value="loss">Loss</option>
+</select>
+
+<br>
+
+<label>Match Importance:</label>
+
+<select id="importance">
+<option value="1">Friendly</option>
+<option value="2">Qualifier</option>
+<option value="3">World Cup Group / Lower Rounds</option>
+<option value="4">Major Knockout</option>
+<option value="5">World Cup Quarterfinal+</option>
+</select>
+
+<br><br>
+
+<button onclick="addMatch()">Add Match</button>
+
+<h3>Matches</h3>
+
+<div id="matches"></div>
+
+<hr>
+
+<h2>Update Score</h2>
 
 <label>Previous Score:</label>
-<input id="previous" type="number">
+<input id="previousScore" type="number">
 
 <br>
 
-<label>Calculated Score:</label>
-<input id="calculated" type="number">
+<label>Games Played This Period:</label>
+<input id="gamesPlayed" type="number" min="0" max="5">
 
 <br>
 
-<label>Games Played (0-5):</label>
-<input id="games" type="number" min="0" max="5">
+<button onclick="calculateFinal()">Calculate Updated Score</button>
 
-<br>
+<h2 id="final"></h2>
 
-<button onclick="calculate()">Calculate</button>
-
-<h3 id="result"></h3>
 
 <script src="script.js"></script>
 
