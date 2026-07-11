@@ -1,80 +1,92 @@
-let matches = [];
+function calculate(){
+
+let lines = document.getElementById("input").value.split("\n");
+
+let output = "";
 
 
-function addMatch(){
+for(let line of lines){
 
-    let Y = Number(document.getElementById("teamRank").value);
-    let R = Number(document.getElementById("oppRank").value);
-    let result = document.getElementById("resultType").value;
-    let I = Number(document.getElementById("importance").value);
+    if(line.trim()=="") continue;
 
-    let score;
 
-    if(result === "win"){
-        score = R / 2;
+    let parts = line.split("|");
+
+    let team = parts[0].trim();
+    let previous = Number(parts[1]);
+    let Y = Number(parts[2]);
+
+    let games =
+    parts[3].trim()
+    .split("/")
+    .filter(x=>x.trim()!="");
+
+
+    let weightedTotal = 0;
+    let importanceTotal = 0;
+
+
+    for(let game of games){
+
+        let data = game.split(",");
+
+        let opponent = data[0].trim();
+        let R = Number(data[1]);
+        let I = Number(data[2]);
+        let result = data[3].trim().toUpperCase();
+
+
+        let score;
+
+
+        if(result=="W"){
+            score = R/2;
+        }
+
+        else if(result=="D"){
+            score = R + (0.1*Y);
+        }
+
+        else if(result=="L"){
+            score = (R+Y)/2;
+        }
+
+
+        weightedTotal +=
+        I*(score-(0.4*R));
+
+
+        importanceTotal += I;
+
     }
 
-    if(result === "draw"){
-        score = R + (0.1 * Y);
-    }
 
-    if(result === "loss"){
-        score = (R + Y) / 2;
-    }
+    let calculated =
+    weightedTotal / importanceTotal;
 
 
-    matches.push({
-        score: score,
-        rank: R,
-        importance: I
-    });
+    let G =
+    Math.min(games.length,5);
 
 
-    document.getElementById("matches").innerHTML =
-        matches.map((m,i)=>
-        `Match ${i+1}: Score ${m.score.toFixed(2)}, Opponent ${m.rank}, Importance ${m.importance}`
-        ).join("<br>");
+    let updated =
+    previous*(1-G/5)
+    +
+    calculated*(G/5);
+
+
+
+    output +=
+    `<p>
+    <b>${team}</b><br>
+    Calculated Score: ${calculated.toFixed(2)}
+    <br>
+    Updated Score: ${updated.toFixed(2)}
+    </p>`;
+
 }
 
 
-
-function calculateFinal(){
-
-    let previous =
-    Number(document.getElementById("previousScore").value);
-
-    let games =
-    Math.min(
-    Number(document.getElementById("gamesPlayed").value),
-    5);
-
-
-    let totalImportance = 0;
-    let weightedScore = 0;
-
-
-    for(let match of matches){
-
-        totalImportance += match.importance;
-
-        weightedScore +=
-        match.importance *
-        (match.score - (0.4 * match.rank));
-
-    }
-
-
-    let calculatedScore =
-    weightedScore / totalImportance;
-
-
-    let updatedScore =
-    previous * (1 - games/5)
-    +
-    calculatedScore * (games/5);
-
-
-    document.getElementById("final").innerHTML =
-    "Updated Score: " + updatedScore.toFixed(2);
+document.getElementById("output").innerHTML=output;
 
 }
