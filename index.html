@@ -10,76 +10,22 @@
 <h1>Alternative FIFA Ranking System</h1>
 
 <p>
-Lower score = better ranking.
-The system accounts for opponent strength, match result,
-match importance, and confidence in new results.
+Enter teams using:
+<br>
+Team | Previous Score | Y | Opponent,R,I,Result / Opponent,R,I,Result
 </p>
 
-<h2>Full Formula</h2>
-
-<p>
-Updated Score = Previous Score × (1 - G/5)
-+ [Σ I(s - 0.4R) / Σ I] × (G/5)
-</p>
-
-<h2>Match Calculator</h2>
-
-<label>Your normalized rank (Y):</label>
-<input id="teamRank" type="number" min="1" max="100">
-
-<br>
-
-<label>Opponent normalized rank (R):</label>
-<input id="oppRank" type="number" min="1" max="100">
-
-<br>
-
-<label>Result:</label>
-
-<select id="resultType">
-<option value="win">Win</option>
-<option value="draw">Draw</option>
-<option value="loss">Loss</option>
-</select>
-
-<br>
-
-<label>Match Importance:</label>
-
-<select id="importance">
-<option value="1">Friendly</option>
-<option value="2">Qualifier</option>
-<option value="3">World Cup Group / Lower Rounds</option>
-<option value="4">Major Knockout</option>
-<option value="5">World Cup Quarterfinal+</option>
-</select>
+<textarea id="input" rows="15" cols="100">
+Spain | 10 | 5 | France,3,5,W / Germany,15,4,W
+</textarea>
 
 <br><br>
 
-<button onclick="addMatch()">Add Match</button>
+<button onclick="calculate()">Calculate Rankings</button>
 
-<h3>Matches</h3>
+<h2>Results</h2>
 
-<div id="matches"></div>
-
-<hr>
-
-<h2>Update Score</h2>
-
-<label>Previous Score:</label>
-<input id="previousScore" type="number">
-
-<br>
-
-<label>Games Played This Period:</label>
-<input id="gamesPlayed" type="number" min="0" max="5">
-
-<br>
-
-<button onclick="calculateFinal()">Calculate Updated Score</button>
-
-<h2 id="final"></h2>
-
+<div id="output"></div>
 
 <script src="script.js"></script>
 
