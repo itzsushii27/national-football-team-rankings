@@ -1,178 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alternative FIFA Ranking Engine</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; color: #333; background-color: #f4f6f9; }
-        h2 { color: #007bff; }
-        textarea { width: 100%; height: 180px; padding: 12px; font-size: 14px; border: 2px solid #ced4da; border-radius: 6px; box-sizing: border-box; font-family: monospace; }
-        button { background: #007bff; color: white; border: none; padding: 14px; width: 100%; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
-        button:hover { background: #0056b3; }
-        .scale-info { background: #e9ecef; padding: 10px 15px; border-radius: 6px; font-size: 14px; margin-bottom: 15px; border-left: 4px solid #6c757d; }
-        .table-container { margin-top: 30px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; }
-        th { background-color: #007bff; color: white; font-weight: 600; }
-        tr:hover { background-color: #f8f9fa; }
-        .rank-badge { font-weight: bold; color: #007bff; }
-        .score-badge { font-weight: bold; color: #28a745; }
-    </style>
+    <title>Alternative FIFA Ranking System</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-    <h2>Independent Alternative Football Ranking System</h2>
-    
-    <div class="scale-info">
-        <strong>Engine Status:</strong> Running direct custom scores. Math boundaries automatically handle ranges natively down to 0.5 (Best possible) and up to 60.0 (Worst possible).
-    </div>
+<h1>Alternative FIFA Ranking System</h1>
 
-    <p><strong>Choose your data mode:</strong></p>
-    <div style="margin-bottom: 15px;">
-        <input type="radio" id="modeCustom" name="dataMode" value="custom" checked>
-        <label for="modeCustom"><strong>Month 2+ Mode</strong> (Uses your custom system scores directly for Y and R)</label>
-        <br>
-        <input type="radio" id="modeFirst" name="dataMode" value="first">
-        <label for="modeFirst"><strong>Month 1 Setup Mode</strong> (Converts raw actual FIFA ranks 1-211 to your scale using 99 / 210)</label>
-    </div>
+<p>
+Lower score = better ranking.
+This system uses recent performance, opponent strength,
+match importance, and team history.
+</p>
 
-    <p><strong>Paste Bulk Team Data (One team per line):</strong></p>
-    <textarea id="bulkString" placeholder="Argentina 12.5 | W 18.6 4, D 8.7 3&#10;Brazil 15.1 | W 5.2 3, L 12.5 4">Argentina 12.5 | W 18.6 4, D 8.7 3, W 35.2 2, L 21.0 3
-Brazil 15.1 | W 5.2 3, L 12.5 4, W 40.0 1
-France 8.3 | D 8.3 5, W 30.5 3</textarea>
-    
-    <button onclick="processBulkRankings()">Process Leaderboard</button>
+<h2>Formula</h2>
 
-    <div id="tableContainer" class="table-container">
-        <h3>Calculated Live Standings</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Team Name</th>
-                    <th>Prev Input Score</th>
-                    <th>Games</th>
-                    <th>WMOR (Schedule)</th>
-                    <th>Calculated Performance</th>
-                    <th>New Updated Score</th>
-                </tr>
-            </thead>
-            <tbody id="leaderboardBody"></tbody>
-        </table>
-    </div>
+<p>
+Updated Score = Previous Score × (1 - G/5)
++ Calculated Score × (G/5)
+</p>
 
-    <script>
-    function processBulkRankings() {
-        const rawInput = document.getElementById('bulkString').value.trim();
-        const isFirstIteration = document.querySelector('input[name="dataMode"]:checked').value === 'first';
-        if (!rawInput) return alert("Please enter data strings to process!");
+<h2>Ranking Calculator</h2>
 
-        const lines = rawInput.split('\n');
-        let leaderboardData = [];
+<label>Previous Score:</label>
+<input id="previous" type="number">
 
-        lines.forEach((line, index) => {
-            line = line.trim();
-            if (!line) return;
+<br>
 
-            try {
-                const segments = line.split('|');
-                if (segments.length < 2) return;
+<label>Calculated Score:</label>
+<input id="calculated" type="number">
 
-                const baselineTokens = segments.trim().split(/\s+/);
-                const prevInputVal = parseFloat(baselineTokens[baselineTokens.length - 1]);
-                const teamName = baselineTokens.slice(0, baselineTokens.length - 1).join(" ");
+<br>
 
-                // Month 1 applies the fraction; Month 2 uses your score directly as Y
-                const Y = isFirstIteration ? (1 + ((99 / 210) * (prevInputVal - 1))) : prevInputVal;
+<label>Games Played (0-5):</label>
+<input id="games" type="number" min="0" max="5">
 
-                const matchStrings = segments.trim().split(',');
-                let matches = [];
+<br>
 
-                matchStrings.forEach(mStr => {
-                    const mTokens = mStr.trim().split(/\s+/);
-                    if (mTokens.length === 3) {
-                        const opponentInputVal = parseFloat(mTokens);
-                        
-                        // Month 1 applies the fraction; Month 2 uses opponent score directly as R
-                        const R = isFirstIteration ? (1 + ((99 / 210) * (opponentInputVal - 1))) : opponentInputVal;
+<button onclick="calculate()">Calculate</button>
 
-                        matches.push({
-                            result: mTokens.toUpperCase(),
-                            R: R,
-                            I: parseInt(mTokens)
-                        });
-                    }
-                });
+<h3 id="result"></h3>
 
-                const gamesPlayed = Math.min(matches.length, 5);
-                let WMOR = 0, calculatedScore = 0, updatedScore = prevInputVal;
+<script src="script.js"></script>
 
-                if (gamesPlayed > 0) {
-                    let totalWeightedMatchScore = 0;
-                    let totalWeightedOpponentRank = 0;
-                    let totalImportance = 0;
-
-                    matches.slice(0, 5).forEach(match => {
-                        const I = match.I; 
-                        const R = match.R; 
-
-                        let baseMatchScore = 0;
-                        if (match.result === 'W') baseMatchScore = R / 2;
-                        else if (match.result === 'D') baseMatchScore = R + (0.1 * Y);
-                        else if (match.result === 'L') baseMatchScore = (R + Y) / 2;
-
-                        totalWeightedMatchScore += (baseMatchScore * I);
-                        totalWeightedOpponentRank += (R * I);
-                        totalImportance += I;
-                    });
-
-                    WMOR = totalWeightedOpponentRank / totalImportance;
-                    const meanMatchScore = totalWeightedMatchScore / totalImportance;
-                    
-                    // Runs the core score directly on your custom scale values
-                    calculatedScore = meanMatchScore - (0.4 * WMOR);
-
-                    const previousImpact = 1 - (gamesPlayed / 5);
-                    const newImpact = gamesPlayed / 5;
-                    updatedScore = (prevInputVal * previousImpact) + (calculatedScore * newImpact);
-                }
-
-                leaderboardData.push({
-                    name: teamName,
-                    prev: prevInputVal,
-                    games: gamesPlayed,
-                    wmor: WMOR,
-                    calc: calculatedScore,
-                    finalScore: updatedScore
-                });
-
-            } catch (err) {
-                console.error(`Error processing line ${index + 1}: `, err);
-            }
-        });
-
-        leaderboardData.sort((a, b) => a.finalScore - b.finalScore);
-
-        const tbody = document.getElementById('leaderboardBody');
-        tbody.innerHTML = "";
-
-        leaderboardData.forEach((team, idx) => {
-            tbody.innerHTML += `
-                <tr>
-                    <td class="rank-badge">#${idx + 1}</td>
-                    <td><strong>${team.name}</strong></td>
-                    <td>${team.prev.toFixed(2)}</td>
-                    <td>${team.games}</td>
-                    <td>${team.games > 0 ? team.wmor.toFixed(2) : '-'}</td>
-                    <td>${team.games > 0 ? team.calc.toFixed(2) : '-'}</td>
-                    <td class="score-badge">${team.finalScore.toFixed(2)}</td>
-                </tr>
-            `;
-        });
-
-        document.getElementById('tableContainer').style.display = "block";
-    }
-    </script>
 </body>
 </html>
