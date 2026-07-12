@@ -412,13 +412,15 @@ function renderBoard(){
   $('last-updated').textContent = mostRecent ? ('Last updated ' + new Date(mostRecent).toLocaleString()) : '';
 }
 
-function renderTeamManage(){
-  const el = $('team-manage-list');
-  const names = Object.keys(TEAMS).sort();
-  if(names.length === 0){
-    el.innerHTML = '<span style="font-size:12px;color:#8a8a7a;">No teams yet.</span>';
-    return;
+btn.addEventListener('click', async ()=>{
+  const name = btn.getAttribute('data-team');
+  if(confirm(`Remove ${name} from the leaderboard entirely?`)){
+    delete TEAMS[name];
+    await saveTeams();
+    renderBoard(); renderTeamManage();
+    toast(`${name} removed`);
   }
+});
   el.innerHTML = names.map(n => `
     <span class="team-chip">${escapeHtml(n)} &middot; ${TEAMS[n].score.toFixed(2)}
       <button data-team="${escapeHtml(n)}" class="remove-team-btn">&times;</button>
@@ -536,12 +538,17 @@ async function init(){
   $('publish-btn').addEventListener('click', publishResults);
 
   $('save-settings-btn').addEventListener('click', async ()=>{
-    SETTINGS.totalTeams = parseInt($('cfg-teams').value) || 210;
-    SETTINGS.morCoef = parseFloat($('cfg-mor').value);
+  SETTINGS.totalTeams = parseInt($('cfg-teams').value) || 210;
+  SETTINGS.morCoef = parseFloat($('cfg-mor').value);
+  $('total-teams-hint').textContent = SETTINGS.totalTeams;
+  toast('Settings saved');
+  try{
     await saveSettings();
-    $('total-teams-hint').textContent = SETTINGS.totalTeams;
-    toast('Settings saved');
-  });
+  }catch(e){
+    console.error('save settings: saveSettings failed', e);
+    toast('Settings updated, but saving failed');
+  }
+});
 }
 
 // NOTE: sessionStorage/localStorage APIs are disabled in the artifact sandbox preview,
