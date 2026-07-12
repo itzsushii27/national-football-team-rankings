@@ -375,7 +375,8 @@ async function loadData(){
 }
 
 async function saveTeams(){
-  await window.storage.set('league-teams', JSON.stringify(TEAMS), true);
+  const result = await window.storage.set('league-teams', JSON.stringify(TEAMS), true);
+  if(!result) throw new Error('storage.set returned null for league-teams');
 }
 async function saveSettings(){
   await window.storage.set('league-settings', JSON.stringify(SETTINGS), true);
@@ -475,7 +476,6 @@ async function publishResults(){
   pendingResults.forEach(({name, computed}) => {
     TEAMS[name] = computed;
   });
-  await saveTeams();
   renderBoard();
   renderTeamManage();
   $('publish-row').style.display = 'none';
@@ -483,6 +483,12 @@ async function publishResults(){
   $('bulk-input').value = '';
   toast(`Published ${pendingResults.length} team${pendingResults.length===1?'':'s'} to the leaderboard`);
   pendingResults = [];
+  try{
+    await saveTeams();
+  }catch(e){
+    console.error('publishResults: saveTeams failed', e);
+    toast('Published, but saving failed — refresh may lose changes');
+  }
 }
 
 /* ---------- Tabs ---------- */
