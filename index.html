@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alt-FIFA Rankings</title>
+<title>Alternative FIFA Rankings</title>
 <style>
   :root{
     --pitch:#0e2a1e;
@@ -365,21 +365,20 @@ function computeTeam(parsed, ownRawRank, settings){
 /* ---------- Storage ---------- */
 async function loadData(){
   try{
-    const res = await window.storage.get('league-teams', true);
-    TEAMS = res ? JSON.parse(res.value) : {};
+    const raw = localStorage.getItem('league-teams');
+    TEAMS = raw ? JSON.parse(raw) : {};
   }catch(e){ TEAMS = {}; }
   try{
-    const res = await window.storage.get('league-settings', true);
-    SETTINGS = res ? JSON.parse(res.value) : SETTINGS;
+    const raw = localStorage.getItem('league-settings');
+    SETTINGS = raw ? JSON.parse(raw) : SETTINGS;
   }catch(e){ /* keep defaults */ }
 }
 
 async function saveTeams(){
-  const result = await window.storage.set('league-teams', JSON.stringify(TEAMS), true);
-  if(!result) throw new Error('storage.set returned null for league-teams');
+  localStorage.setItem('league-teams', JSON.stringify(TEAMS));
 }
 async function saveSettings(){
-  await window.storage.set('league-settings', JSON.stringify(SETTINGS), true);
+  localStorage.setItem('league-settings', JSON.stringify(SETTINGS));
 }
 
 /* ---------- Rendering ---------- */
